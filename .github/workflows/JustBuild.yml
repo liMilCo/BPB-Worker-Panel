@@ -38,5 +38,12 @@ jobs:
           git add -f unobfuscated/worker.js
           git commit -m "Just build: _worker.js"
           git push
+
+      - name: Update main
+        run: |
+          git checkout main
+          git fetch origin
+          git reset --hard origin/dev
+          git push origin main --force
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
