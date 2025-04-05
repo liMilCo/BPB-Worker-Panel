@@ -12281,29 +12281,4 @@ var worker_default = {
 export {
   worker_default as default
 };
-/*! Bundled license information:
 
-jszip/dist/jszip.min.js:
-  (*!
-  
-  JSZip v3.10.1 - A JavaScript class for generating and reading zip files
-  <http://stuartk.com/jszip>
-  
-  (c) 2009-2016 Stuart Knightley <stuart [at] stuartk.com>
-  Dual licenced under the MIT license or GPLv3. See https://raw.github.com/Stuk/jszip/main/LICENSE.markdown.
-  
-  JSZip uses the library pako released under the MIT license :
-  https://github.com/nodeca/pako/blob/main/LICENSE
-  *)
-
-js-sha256/src/sha256.js:
-  (**
-   * [js-sha256]{@link https://github.com/emn178/js-sha256}
-   *
-   * @version 0.11.0
-   * @author Chen, Yi-Cyuan [emn178@gmail.com]
-   * @copyright Chen, Yi-Cyuan 2014-2024
-   * @license MIT
-   *)
-*/
-//# sourceMappingURL=worker.js.map
