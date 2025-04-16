@@ -1,9 +1,5 @@
 name: Build and Release
 
-on:
-  push:
-    branches:
-      - dev
       
 permissions:
   contents: write
