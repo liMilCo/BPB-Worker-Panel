@@ -30,12 +30,10 @@ jobs:
         run: npm install
 
       - name: Build project
-        run: npm run build
-
-      - name: Copy project
         run: |
-          mkdir -p unobfuscated
-          cp -f dist/worker.js unobfuscated/worker.js
+            npm run build
+            mkdir -p unobfuscated
+            cp -f dist/worker.js unobfuscated/worker.js
 
         
       - name: Upload Release Assets
