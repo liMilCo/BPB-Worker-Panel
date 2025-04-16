@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, dirname as pathDirname } from 'path';
 import { fileURLToPath } from 'url';
 import { build } from 'esbuild';
