@@ -92,9 +92,24 @@ async function buildWorker() {
     });*/
 
     //const worker = obfuscationResult.getObfuscatedCode();
-    mkdirSync(MY_PATH, { recursive: true });
-    writeFileSync('./my/worker.js', finalCode, 'utf8');
+//    mkdirSync(MY_PATH, { recursive: true });
+ //   writeFileSync('./my/worker.js', finalCode, 'utf8');
 
+const dirPath = join(__dirname, 'my');
+const filePath = join(dirPath, 'worker.js');
+
+// Create the directory if it doesn't exist
+if (!fs.existsSync(dirPath)) {
+  mkdirSync(dirPath, { recursive: true });
+  console.log(`Directory created: ${dirPath}`);
+}
+
+// Create and write to the file
+
+fs.writeFileSync(filePath, finalCode, 'utf8');
+console.log(`File created: ${filePath}`);
+
+    
     /*const zip = new JSZip();
     zip.file('_worker.js', worker);
     zip.generateAsync({
