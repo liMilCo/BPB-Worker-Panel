@@ -99,7 +99,7 @@ const dirPath = join(__dirname, 'my');
 const filePath = join(dirPath, 'worker.js');
 
 // Create the directory if it doesn't exist
-if (!fs.existsSync(dirPath)) {
+if (!existsSync(dirPath)) {
   mkdirSync(dirPath, { recursive: true });
   console.log(`Directory created: ${dirPath}`);
 }
