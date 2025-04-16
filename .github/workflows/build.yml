@@ -33,7 +33,7 @@ jobs:
         run: |
             npm run build
             mkdir -p unobfuscated
-            cp -f my/worker.js unobfuscated/worker.js
+            cp -f dist/worker.js unobfuscated/worker.js
 
       - name: Commit and push built worker
         run: |
