@@ -59,7 +59,7 @@ async function buildWorker() {
         bundle: true,
         format: 'esm',
         write: false,
-        minifySyntax: false,
+        minifySyntax: true,
         external: ['cloudflare:sockets'],
         platform: 'node',
         define: {
