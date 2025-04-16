@@ -95,7 +95,7 @@ async function buildWorker() {
 //    mkdirSync(MY_PATH, { recursive: true });
  //   writeFileSync('./my/worker.js', finalCode, 'utf8');
 
-const dirPath = join(__dirname, 'my');
+const dirPath = join(__dirname, '../my');
 const filePath = join(dirPath, 'worker.js');
 
 // Create the directory if it doesn't exist
