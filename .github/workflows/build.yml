@@ -49,7 +49,7 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: my/*
+          file: dist/*
           tag: v${{ env.RELEASE_VERSION }}
           release_name: Release v${{ env.RELEASE_VERSION }}
           overwrite: true
