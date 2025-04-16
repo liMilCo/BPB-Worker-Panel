@@ -36,7 +36,8 @@ jobs:
         run: |
           mkdir -p unobfuscated
           cp -f dist/worker.js unobfuscated/worker.js
-          
+
+        
       - name: Upload Release Assets
         uses: svenstaro/upload-release-action@v2
         with:
