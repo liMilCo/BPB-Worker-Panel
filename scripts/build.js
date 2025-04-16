@@ -16,7 +16,6 @@ const __dirname = pathDirname(__filename);
 
 const ASSET_PATH = join(__dirname, '../src/assets');
 const DIST_PATH = join(__dirname, '../dist/');
-const MY_PATH = join(__dirname, '../my/');
 
 async function processHtmlPages() {
     const indexFiles = sync('**/index.html', { cwd: ASSET_PATH });
@@ -34,15 +33,15 @@ async function processHtmlPages() {
             .replace(/__STYLE__/g, `<style>${styleCode}</style>`)
             .replace(/__SCRIPT__/g, scriptCode)
             .replace(/__PANEL_VERSION__/g, version);
-
+/*
         const minifiedHtml = minify(finalHtml, {
             collapseWhitespace: true,
             removeAttributeQuotes: true,
             minifyCSS: true,
             minifyJS: true
-        });
+        });*/
 
-        result[dir] = JSON.stringify(minifiedHtml);
+        result[dir] = JSON.stringify(finalHtml);
     }
 
     console.log('✅ Assets bundled successfuly!');
@@ -60,7 +59,7 @@ async function buildWorker() {
         bundle: true,
         format: 'esm',
         write: false,
-        minifySyntax: true,
+        minifySyntax: false,
         external: ['cloudflare:sockets'],
         platform: 'node',
         define: {
@@ -92,10 +91,10 @@ async function buildWorker() {
     });*/
 
     //const worker = obfuscationResult.getObfuscatedCode();
-//    mkdirSync(MY_PATH, { recursive: true });
- //   writeFileSync('./my/worker.js', finalCode, 'utf8');
+    mkdirSync(DIST_PATH, { recursive: true });
+    writeFileSync('./dist/worker.js', finalCode, 'utf8');
 
-const dirPath = join(__dirname, '../my');
+/*const dirPath = join(__dirname, '../my');
 const filePath = join(dirPath, 'worker.js');
 
 // Create the directory if it doesn't exist
@@ -109,7 +108,7 @@ if (!existsSync(dirPath)) {
 writeFileSync(filePath, finalCode, 'utf8');
 console.log(`File created: ${filePath}`);
 
-    
+    */
     /*const zip = new JSZip();
     zip.file('_worker.js', worker);
     zip.generateAsync({
