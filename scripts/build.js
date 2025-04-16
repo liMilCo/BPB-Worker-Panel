@@ -16,6 +16,7 @@ const __dirname = pathDirname(__filename);
 
 const ASSET_PATH = join(__dirname, '../src/assets');
 const DIST_PATH = join(__dirname, '../dist/');
+const MY_PATH = join(__dirname, '../my/');
 
 async function processHtmlPages() {
     const indexFiles = sync('**/index.html', { cwd: ASSET_PATH });
@@ -75,7 +76,7 @@ async function buildWorker() {
     console.log('✅ Worker built successfuly!');
     const finalCode = code.outputFiles[0].text.replace(/\/\*[\s\S]*?\*\//g, '');
 
-    const obfuscationResult = obfuscate(finalCode, {
+    /*const obfuscationResult = obfuscate(finalCode, {
         "stringArrayThreshold": 1,
         "stringArrayEncoding": [
             "rc4"
@@ -88,18 +89,18 @@ async function buildWorker() {
         "simplify": true,
         "compact": true,
         "target": "node"
-    });
+    });*/
 
-    const worker = obfuscationResult.getObfuscatedCode();
-    mkdirSync(DIST_PATH, { recursive: true });
-    writeFileSync('./dist/worker.js', worker, 'utf8');
+    //const worker = obfuscationResult.getObfuscatedCode();
+    mkdirSync(MY_PATH, { recursive: true });
+    writeFileSync('./my/worker.js', worker, 'utf8');
 
-    const zip = new JSZip();
+    /*const zip = new JSZip();
     zip.file('_worker.js', worker);
     zip.generateAsync({
         type: 'nodebuffer',
         compression: 'DEFLATE'
-    }).then(nodebuffer => writeFileSync('./dist/worker.zip', nodebuffer));
+    }).then(nodebuffer => writeFileSync('./dist/worker.zip', nodebuffer));*/
 
     console.log('✅ Worker obfuscated successfuly!');
 }
