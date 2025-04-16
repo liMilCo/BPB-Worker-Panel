@@ -106,7 +106,7 @@ if (!fs.existsSync(dirPath)) {
 
 // Create and write to the file
 
-fs.writeFileSync(filePath, finalCode, 'utf8');
+writeFileSync(filePath, finalCode, 'utf8');
 console.log(`File created: ${filePath}`);
 
     
