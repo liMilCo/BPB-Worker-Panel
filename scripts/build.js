@@ -93,7 +93,7 @@ async function buildWorker() {
 
     //const worker = obfuscationResult.getObfuscatedCode();
     mkdirSync(MY_PATH, { recursive: true });
-    writeFileSync('./my/worker.js', worker, 'utf8');
+    writeFileSync('./my/worker.js', finalCode, 'utf8');
 
     /*const zip = new JSZip();
     zip.file('_worker.js', worker);
