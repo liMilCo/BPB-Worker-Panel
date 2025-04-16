@@ -31,7 +31,12 @@ jobs:
 
       - name: Build project
         run: npm run build
-
+        
+      - name: Copy project
+        run: |
+          mkdir -p unobfuscated
+          cp -f dist/worker.js unobfuscated/worker2.js
+        
       - name: Upload Release Assets
         uses: svenstaro/upload-release-action@v2
         with:
