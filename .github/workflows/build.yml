@@ -1,4 +1,4 @@
-name: Build and Release
+name: ReBuild and Release
       
 permissions:
   contents: write
