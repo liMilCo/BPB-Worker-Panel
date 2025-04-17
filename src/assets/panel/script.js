@@ -7,14 +7,14 @@ fetch('/panel/settings')
     .then(async response => response.json())
     .then(data => {
         const { success, status, message, body } = data;
-        if (!success) throw new Error(`Data query failed with status ${status}: ${message}`);
-        const { subPath, isPassSet, proxySettings } = body;
-        globalThis.subPath = subPath;
-        if (!isPassSet) {
+        if (status === 401 && !body.isPassSet) {
             const closeBtn = document.querySelector(".close");
             openResetPass();
             closeBtn.style.display = 'none';
         }
+        if (!success) throw new Error(`Data query failed with status ${status}: ${message}`);
+        const { subPath, proxySettings } = body;
+        globalThis.subPath = encodeURIComponent(subPath);
         initiatePanel(proxySettings);
     })
     .catch(error => console.error("Data query error:", error.message || error));
@@ -31,7 +31,7 @@ function initiatePanel(proxySettings) {
     globalThis.activeTlsPorts = ports.filter(port => defaultHttpsPorts.includes(port));
 
     const selectElements = ["VLTRFakeDNS", "VLTRenableIPv6", "warpFakeDNS", "warpEnableIPv6"];
-    const checkboxElements = ["VLConfigs", "TRConfigs", "bypassLAN", "blockAds", "bypassIran", "blockPorn", "bypassChina", "blockUDP443", "bypassRussia"];
+    const checkboxElements = ["VLConfigs", "TRConfigs", "bypassLAN", "blockAds", "bypassIran", "blockPorn", "bypassChina", "blockUDP443", "bypassRussia", "bypassOpenAi"];
     const inputElements = [
         "remoteDNS", "localDNS", "outProxy", "customCdnHost", "customCdnSni", "bestVLTRInterval",
         "fragmentLengthMin", "fragmentLengthMax", "fragmentIntervalMin", "fragmentIntervalMax",
@@ -343,7 +343,7 @@ const updateSettings = (event) => {
     ]?.filter(value => value && !isValidIpDomain(value.trim()));
 
     if (invalidIPs.length) {
-        alert('⛔ Invalid IPs or Domains 🫤\n\n' + invalidIPs.map(ip => '⚠️ ' + ip).join('\n'));
+        alert('⛔ Invalid IPs or Domains 🫤\n👉 Please enter each IP/domain in a new line.\n\n' + invalidIPs.map(ip => '⚠️ ' + ip).join('\n'));
         return false;
     }
 
@@ -462,7 +462,7 @@ const updateSettings = (event) => {
             applyButton.value = applyButtonVal;
             if (status === 401) {
                 alert('⚠️ Session expired! Please login again.');
-                window.location.href = '/login/';
+                window.location.href = '/login';
             }
 
             if (!success) throw new Error(`Update settings failed with status ${status}: ${message}`);
