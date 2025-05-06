@@ -67,7 +67,8 @@ async function buildWorker() {
         format: 'esm',
         write: false,
         external: ['cloudflare:sockets'],
-        platform: 'node',
+        platform: 'browser',
+        target: 'es2020',
         define: {
             __PANEL_HTML_CONTENT__: htmls['panel'] ?? '""',
             __LOGIN_HTML_CONTENT__: htmls['login'] ?? '""',
@@ -83,7 +84,8 @@ async function buildWorker() {
         format: 'esm',
         write: false,
         external: ['cloudflare:sockets'],
-        platform: 'node',
+        platform: 'browser',
+        target: 'es2020',
         define: {
             __PANEL_HTML_CONTENT__: htmls_full['panel'] ?? '""',
             __LOGIN_HTML_CONTENT__: htmls_full['login'] ?? '""',
@@ -93,7 +95,7 @@ async function buildWorker() {
         }
     });
 
-    console.log('✅ Worker built successfuly!');
+    console.log('✅ built successfuly!');
 
     const minifiedCode = await jsMinify(code.outputFiles[0].text, {
         module: true,
@@ -104,7 +106,7 @@ async function buildWorker() {
 
     const FullCode = code_full.outputFiles[0].text;
 
-    console.log('✅ Worker minified successfuly!');
+    console.log('✅ Minified successfuly!');
 
     /*const obfuscationResult = obfs.obfuscate(minifiedCode.code, {
         stringArrayThreshold: 1,
@@ -126,7 +128,7 @@ async function buildWorker() {
 
     const worker_full = `// @ts-nocheck\n${FullCode}`;
 
-    console.log('✅ Worker obfuscated successfuly!');
+    console.log('✅ Created successfuly!');
 
     mkdirSync(DIST_PATH, { recursive: true });
     writeFileSync('./dist/worker.minify.js', worker, 'utf8');
@@ -139,7 +141,7 @@ async function buildWorker() {
         compression: 'DEFLATE'
     }).then(nodebuffer => writeFileSync('./dist/worker.zip', nodebuffer));
 */
-    console.log('✅ Worker files published successfuly!');
+    console.log('✅ Done!');
 }
 
 buildWorker().catch(err => {
