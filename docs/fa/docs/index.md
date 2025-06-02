@@ -22,7 +22,7 @@
 * **پروتکل‌های متنوع**: ارائه کانفیگ‌های VLESS، Trojan و Wireguard (Warp).
 * **کانفیگ‌های Warp Pro**: کانفیگ‌های Warp بهینه‌شده برای شرایط خاص ایران.
 * **پشتیبانی از Fragment**: اتصال حتی در صورت فیلتر شدن دامنه.
-* **قوانین مسیریابی کامل**: دور زدن سایت‌های ایرانی، چینی، روسی و LAN، مسدود کردن QUIC، محتوای پورن، تبلیغات، بدافزارها، فیشینگ و غیره.
+* **قوانین مسیریابی کامل**: دور زدن سایت‌های ایرانی، چینی، روسی و LAN، مسدود کردن QUIC، محتوای پورن، تبلیغات، بدافزارها، فیشینگ و در زدن سایت‌های تحریمی.
 * **زنجیره‌ی Proxy**: می‌تونید یه Proxy زنجیره‌ای اضافه کنید تا IP ثابت بشه.
 * **پشتیبانی از برنامه‌های مختلف**: لینک‌های اشتراک برای برنامه‌های با هسته‌های Xray، Sing-box و Clash-Mihomo.
 * **پنل امن با رمز عبور**: پنل محافظت شده با رمز عبور.
@@ -54,7 +54,7 @@
 |  **Shadowrocket**   |                  | :material-close: | :material-close: |
 |     **Nekoray**     |                  | :material-check: | :material-close: |
 |     **Hiddify**     | 2.5.7 یا بالاتر  | :material-check: | :material-check: |
-|     **NikaNG**      |                  | :material-check: | :material-check: |
+|     **MahsaNG**     |                  | :material-check: | :material-check: |
 |   **Clash Meta**    |                  | :material-close: | :material-close: |
 | **Clash Verge Rev** |                  | :material-close: | :material-close: |
 |     **FLClash**     |                  | :material-close: | :material-close: |

@@ -3,29 +3,33 @@ import { getDataset } from '../kv/handlers';
 
 async function buildSingBoxDNS(isWarp) {
     const isIPv6 = (VLTRenableIPv6 && !isWarp) || (warpEnableIPv6 && isWarp);
+    const url = new URL(remoteDNS);
+    const dnsProtocol = url.protocol.replace(':', '');
+
     const servers = [
         {
-            type: isWarp ? "udp" : "https",
+            type: isWarp ? "udp" : dnsProtocol,
             server: isWarp ? "1.1.1.1" : dohHost.host,
-            server_port: isWarp ? 53 : 443,
             detour: "✅ Selector",
             tag: "dns-remote"
         },
     ];
 
-    const addDnsServer = (type, server, server_port, detour, tag, domain_resolver) => servers.push({
-        type,
-        ...(server && { server }),
-        ...(server_port && { server_port }),
-        ...(detour && { detour }),
-        ...(domain_resolver && {
-            domain_resolver: {
-                server: domain_resolver,
-                strategy: isIPv6 ? "prefer_ipv4" : "ipv4_only"
-            }
-        }),
-        tag
-    });
+    function addDnsServer(type, server, server_port, detour, tag, domain_resolver) {
+        servers.push({
+            type,
+            ...(server && { server }),
+            ...(server_port && { server_port }),
+            ...(detour && { detour }),
+            ...(domain_resolver && {
+                domain_resolver: {
+                    server: domain_resolver,
+                    strategy: isIPv6 ? "prefer_ipv4" : "ipv4_only"
+                }
+            }),
+            tag
+        });
+    }
 
     if (localDNS === 'localhost') {
         addDnsServer("local", null, null, null, "dns-direct");
@@ -33,19 +37,19 @@ async function buildSingBoxDNS(isWarp) {
         addDnsServer("udp", localDNS, 53, null, "dns-direct");
     }
 
-    const dnsHost = getDomain(antiSanctionDNS);
-    if (dnsHost.isHostDomain) {
-        addDnsServer("https", dnsHost.host, 443, null, "dns-anti-sanction", "dns-direct");
-    } else {
-        addDnsServer("udp", antiSanctionDNS, 53, null, "dns-anti-sanction", null);
+    const isSanctionRule = customBypassSanctionRules.filter(isDomain).length;
+    if (isSanctionRule) {
+        const dnsHost = getDomain(antiSanctionDNS);
+        if (dnsHost.isHostDomain) {
+            addDnsServer("https", dnsHost.host, 443, null, "dns-anti-sanction", "dns-direct");
+        } else {
+            addDnsServer("udp", antiSanctionDNS, 53, null, "dns-anti-sanction", null);
+        }
     }
 
     const rules = [
         {
-            domain: [
-                "raw.githubusercontent.com",
-                "time.apple.com"
-            ],
+            domain: ["raw.githubusercontent.com"],
             server: "dns-direct"
         },
         {
@@ -72,7 +76,7 @@ async function buildSingBoxDNS(isWarp) {
         });
     }
 
-    const addDnsRule = (geosite, geoip, domain, dns) => {
+    function addDnsRule(geosite, geoip, domain, dns) {
         let type, mode;
         const ruleSets = [];
         if (geoip) {
@@ -96,21 +100,20 @@ async function buildSingBoxDNS(isWarp) {
 
     const routingRules = getRoutingRules();
 
-    customBlockRules.forEach(value => {
-        isDomain(value) && routingRules.unshift({ rule: true, domain: value, type: 'reject' });
+    customBlockRules.filter(isDomain).forEach(domain => {
+        routingRules.unshift({ rule: true, domain: domain, type: 'reject' });
     });
 
-    customBypassRules.forEach(value => {
-        isDomain(value) && routingRules.push({ rule: true, domain: value, type: 'direct', dns: "dns-direct" });
+    customBypassRules.filter(isDomain).forEach(domain => {
+        routingRules.push({ rule: true, domain: domain, type: 'direct', dns: "dns-direct" });
     });
 
-    customBypassSanctionRules.forEach(value => {
-        isDomain(value) && routingRules.push({ rule: true, domain: value, type: 'direct', dns: "dns-anti-sanction" });
+    customBypassSanctionRules.filter(isDomain).forEach(domain => {
+        routingRules.push({ rule: true, domain: domain, type: 'direct', dns: "dns-anti-sanction" });
     });
 
     const groupedRules = new Map();
-    routingRules.forEach(({ rule, geosite, geoip, domain, type, dns }) => {
-        if (!rule) return;
+    routingRules.filter(({ rule }) => rule).forEach(({ geosite, geoip, domain, type, dns }) => {
         if (geosite && geoip && type === 'direct') {
             addDnsRule(geosite, geoip, null, dns);
         } else {
@@ -166,7 +169,6 @@ function buildSingBoxRoutingRules(isWarp) {
             action: "hijack-dns",
             mode: "or",
             rules: [
-                { inbound: "dns-in" },
                 { port: 53 },
                 { protocol: "dns" }
             ],
@@ -187,7 +189,7 @@ function buildSingBoxRoutingRules(isWarp) {
         outbound: "direct"
     });
 
-    const addRoutingRule = (domain, ip, geosite, geoip, network, protocol, port, type) => {
+    function addRoutingRule(domain, ip, geosite, geoip, network, protocol, port, type) {
         const action = type === 'reject' ? 'reject' : 'route';
         const outbound = type === 'direct' ? 'direct' : null;
         rules.push({
@@ -248,9 +250,8 @@ function buildSingBoxRoutingRules(isWarp) {
     }
 
     const groupedRules = new Map();
-    routingRules.forEach(routingRule => {
-        const { rule, type, domain, ip, geosite, geoip } = routingRule;
-        if (!rule) return;
+    routingRules.filter(({ rule }) => rule).forEach(routingRule => {
+        const { type, domain, ip, geosite, geoip } = routingRule;
         !groupedRules.has(type) && groupedRules.set(type, { domain: [], ip: [], geosite: [], geoip: [] });
         domain && groupedRules.get(type).domain.push(domain);
         ip && groupedRules.get(type).ip.push(ip);
@@ -287,6 +288,7 @@ function buildSingBoxVLOutbound(remark, address, port, host, sni, allowInsecure)
         server: address,
         server_port: +port,
         uuid: userID,
+        network: "tcp",
         packet_encoding: "",
         transport: {
             early_data_header_name: "Sec-WebSocket-Protocol",
@@ -330,6 +332,7 @@ function buildSingBoxTROutbound(remark, address, port, host, sni, allowInsecure)
         password: TRPassword,
         server: address,
         server_port: +port,
+        network: "tcp",
         transport: {
             early_data_header_name: "Sec-WebSocket-Protocol",
             max_early_data: 2560,
@@ -673,14 +676,6 @@ const singboxConfigTemp = {
     dns: {},
     inbounds: [
         {
-            type: "direct",
-            tag: "dns-in",
-            listen: "0.0.0.0",
-            listen_port: 6450,
-            override_address: "1.1.1.1",
-            override_port: 53
-        },
-        {
             type: "tun",
             tag: "tun-in",
             address: [
@@ -717,9 +712,9 @@ const singboxConfigTemp = {
     route: {},
     ntp: {
         enabled: true,
-        server: "time.apple.com",
+        server: "time.cloudflare.com",
         server_port: 123,
-        detour: "direct",
+        domain_resolver: "dns-direct",
         interval: "30m",
         write_to_system: false
     },
@@ -807,13 +802,6 @@ function getRoutingRules() {
             dns: "dns-anti-sanction",
             geosite: "geosite-openai",
             geositeURL: "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-openai.srs"
-        },
-        {
-            rule: bypassGoogle,
-            type: 'direct',
-            dns: "dns-anti-sanction",
-            geosite: "geosite-google",
-            geositeURL: "https://raw.githubusercontent.com/Chocolate4U/Iran-sing-box-rules/rule-set/geosite-google.srs"
         },
         {
             rule: bypassMicrosoft,

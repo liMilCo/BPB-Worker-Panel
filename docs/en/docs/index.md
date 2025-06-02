@@ -22,7 +22,7 @@ This project is aimed to provide a user panel to access FREE, SECURE and PRIVATE
 3. **Versatile Protocols:** Provides VLESS, Trojan and Wireguard (Warp) protocols.
 4. **Warp Pro configs:** Optimized Warp for crucial circumstances.
 5. **Fragment support:** Supports Fragment functionality for crucial network situations.
-6. **Comprehensive Routing Rules:** Bypassing Iran/China/Russia and LAN, Blocking QUIC, Porn, Ads, Malwares, Phishing and more.
+6. **Comprehensive Routing Rules:** Bypassing Iran/China/Russia and LAN, Blocking QUIC, Porn, Ads, Malwares, Phishing and also bypassing sancitons.
 7. **Chain Proxy:** Capable of adding a chain proxy to fix IP.
 8. **Broad client compatibility:** Offers subscription links for Xray, Sing-box and Clash-Mihomo core clients.
 9. **Password-protected panel:** Provides secure and private panel with password protection.
@@ -54,7 +54,7 @@ This project is aimed to provide a user panel to access FREE, SECURE and PRIVATE
 |  **Shadowrocket**   |                  | :material-close: | :material-close: |
 |     **Nekoray**     |                  | :material-check: | :material-close: |
 |     **Hiddify**     | 2.5.7 or higher  | :material-check: | :material-check: |
-|     **NikaNG**      |                  | :material-check: | :material-check: |
+|     **MahsaNG**     |                  | :material-check: | :material-check: |
 |   **Clash Meta**    |                  | :material-close: | :material-close: |
 | **Clash Verge Rev** |                  | :material-close: | :material-close: |
 |     **FLClash**     |                  | :material-close: | :material-close: |
