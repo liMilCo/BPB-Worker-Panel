@@ -34,8 +34,6 @@ async function buildXrayDNS(outboundAddrs, domainToStaticIPs, isWorkerLess, isWa
         ? [...staticIPs.ipv4, ...staticIPs.ipv6]
         : staticIPs.ipv4;
 
-    if (isWorkerLess) dnsHost["cloudflare-dns.com"] = ["cloudflare.com"];
-
     const hosts = Object.keys(dnsHost).length ? { hosts: dnsHost } : {};
     const isIPv6 = (VLTRenableIPv6 && !isWarp) || (warpEnableIPv6 && isWarp);
     const dnsObject = {
@@ -45,25 +43,28 @@ async function buildXrayDNS(outboundAddrs, domainToStaticIPs, isWorkerLess, isWa
         tag: "dns",
     };
 
-    const finalRemoteDNS = isWorkerLess
-        ? "https://cloudflare-dns.com/dns-query"
-        : isWarp
-            ? "1.1.1.1"
-            : remoteDNS;
+    let skipFallback = true;
+    let finalRemoteDNS = isWarp ? "1.1.1.1" : remoteDNS;
+    
+    if (isWorkerLess) {
+        if (!dnsObject.hosts) dnsObject.hosts = {};
+        dnsObject.hosts["cloudflare-dns.com"] = ["cloudflare.com"];
+        skipFallback = false;
+        dnsObject.disableFallback = true;
+        finalRemoteDNS = "https://cloudflare-dns.com/dns-query";
+        // const fallbackRemoteDns = buildDnsServer('https://dns.google/dns-query', null, null, null, "remote-dns-fallback");
+        // dnsObject.servers.push(fallbackRemoteDns);
+    }
 
     const remoteDnsServer = buildDnsServer(finalRemoteDNS, null, null, null, "remote-dns");
     dnsObject.servers.push(remoteDnsServer);
-    if (isWorkerLess) {
-        const fallbackRemoteDns = buildDnsServer('https://dns.google/dns-query', null, null, null, "remote-dns-fallback");
-        dnsObject.servers.push(fallbackRemoteDns);
-    }
 
     const bypassRules = routingRules.filter(({ type }) => type === 'direct');
 
     outboundAddrs.filter(isDomain).forEach(domain => {
         bypassRules.push({ rule: true, domain: `full:${domain}`, dns: localDNS });
     });
-    
+
     customBypassRules.filter(isDomain).forEach(domain => {
         bypassRules.push({ rule: true, domain: `domain:${domain}`, dns: localDNS });
     });
@@ -83,7 +84,7 @@ async function buildXrayDNS(outboundAddrs, domainToStaticIPs, isWorkerLess, isWa
     const groupedDomainRules = new Map();
     bypassRules.filter(({ rule }) => rule).forEach(({ domain, ip, dns }) => {
         if (ip) {
-            const server = buildDnsServer(dns, [domain], ip ? [ip] : null, true);
+            const server = buildDnsServer(dns, [domain], ip ? [ip] : null, skipFallback);
             dnsObject.servers.push(server);
         } else {
             !groupedDomainRules.has(dns) && groupedDomainRules.set(dns, []);
@@ -94,7 +95,7 @@ async function buildXrayDNS(outboundAddrs, domainToStaticIPs, isWorkerLess, isWa
 
     for (const [dns, domain] of groupedDomainRules) {
         if (domain.length) {
-            const server = buildDnsServer(dns, domain, null, true);
+            const server = buildDnsServer(dns, domain, null, skipFallback);
             dnsObject.servers.push(server);
         }
     }
@@ -145,8 +146,8 @@ function buildXrayRoutingRules(isChain, isBalancer, isWorkerLess, isWarp) {
 
     const finallOutboundTag = isChain ? "chain" : isWorkerLess ? "fragment" : "proxy";
     const outTag = isBalancer ? "all" : finallOutboundTag;
-    const remoteDnsServers = isWorkerLess ? ["remote-dns", "remote-dns-fallback"] : ["remote-dns"];
-    addRoutingRule(remoteDnsServers, null, null, null, null, outTag, isBalancer);
+    // const remoteDnsServers = isWorkerLess ? ["remote-dns", "remote-dns-fallback"] : ["remote-dns"];
+    addRoutingRule(["remote-dns"], null, null, null, null, outTag, isBalancer);
     addRoutingRule(["dns"], null, null, null, null, "direct");
 
     if (bypassLAN) {
@@ -622,7 +623,7 @@ async function buildXrayBestFragmentConfig(hostName, chainProxy, outbound) {
 }
 
 async function buildXrayWorkerLessConfig() {
-    const config = await buildXrayConfig(`💦 BPB F - WorkerLess ⭐`, false, false, false, false, true, true, [], 'dns.google');
+    const config = await buildXrayConfig(`💦 BPB F - WorkerLess ⭐`, false, false, false, false, true, true, [], false);
     return config;
 }
 
@@ -858,8 +859,13 @@ function getRoutingRules() {
         { rule: bypassMicrosoft, type: 'direct', domain: "geosite:microsoft", dns: antiSanctionDNS },
         { rule: bypassOracle, type: 'direct', domain: "geosite:oracle", dns: antiSanctionDNS },
         { rule: bypassDocker, type: 'direct', domain: "geosite:docker", dns: antiSanctionDNS },
+        { rule: bypassAdobe, type: 'direct', domain: "geosite:adobe", dns: antiSanctionDNS },
+        { rule: bypassEpicGames, type: 'direct', domain: "geosite:epicgames", dns: antiSanctionDNS },
         { rule: bypassIntel, type: 'direct', domain: "geosite:intel", dns: antiSanctionDNS },
+        { rule: bypassAmd, type: 'direct', domain: "geosite:amd", dns: antiSanctionDNS },
+        { rule: bypassNvidia, type: 'direct', domain: "geosite:nvidia", dns: antiSanctionDNS },
         { rule: bypassAsus, type: 'direct', domain: "geosite:asus", dns: antiSanctionDNS },
-        { rule: bypassHp, type: 'direct', domain: "geosite:hp", dns: antiSanctionDNS }
+        { rule: bypassHp, type: 'direct', domain: "geosite:hp", dns: antiSanctionDNS },
+        { rule: bypassLenovo, type: 'direct', domain: "geosite:lenovo", dns: antiSanctionDNS },
     ];
 }
