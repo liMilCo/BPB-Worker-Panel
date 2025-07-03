@@ -9416,6 +9416,7 @@ async function handleSubscriptions(request, env) {
         case "hiddify-pro":
           return await getHiddifyWarpConfigs(true);
         case "xray-knocker":
+        case "xray-pro":
           return await getXrayWarpConfigs(request, env, true);
         default:
           break;
