@@ -8,9 +8,6 @@ import { minify as htmlMinify } from 'html-minifier';
 import JSZip from "jszip";
 import obfs from 'javascript-obfuscator';
 
-const env = process.env.NODE_ENV || 'production';
-const devMode = env !== 'production';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = pathDirname(__filename);
 
@@ -20,6 +17,7 @@ const DIST_PATH = join(__dirname, '../dist/');
 async function processHtmlPages() {
     const indexFiles = globSync('**/index.html', { cwd: ASSET_PATH });
     const result = {};
+    const result_full = {};
 
     for (const relativeIndexPath of indexFiles) {
         const dir = pathDirname(relativeIndexPath);
@@ -41,15 +39,25 @@ async function processHtmlPages() {
         });
 
         result[dir] = JSON.stringify(minifiedHtml);
+
+        const finalHtml_full = indexHtml
+            .replace(/__STYLE__/g, `<style>${styleCode}</style>`)
+            .replace(/__SCRIPT__/g, scriptCode);
+
+        result_full[dir] = JSON.stringify(finalHtml_full);
     }
 
     console.log('✅ Assets bundled successfuly!');
-    return result;
+    //return result;
+    return {"full":result_full, "mini":result};
 }
 
 async function buildWorker() {
 
-    const htmls = await processHtmlPages();
+    const htmlss = await processHtmlPages();
+    const htmls_full = htmlss.full;
+    const htmls = htmlss.mini;
+
     const faviconBuffer = readFileSync('./src/assets/favicon.ico');
     const faviconBase64 = faviconBuffer.toString('base64');
 
@@ -69,50 +77,70 @@ async function buildWorker() {
             __ICON__: JSON.stringify(faviconBase64)
         }
     });
-    
-    console.log('✅ Worker built successfuly!');
+ 
+    const code_full = await build({
+        entryPoints: [join(__dirname, '../src/worker.js')],
+        bundle: true,
+        format: 'esm',
+        write: false,
+        external: ['cloudflare:sockets'],
+        platform: 'browser',
+        target: 'es2020',
+        define: {
+            __PANEL_HTML_CONTENT__: htmls_full['panel'] ?? '""',
+            __LOGIN_HTML_CONTENT__: htmls_full['login'] ?? '""',
+            __ERROR_HTML_CONTENT__: htmls_full['error'] ?? '""',
+            __SECRETS_HTML_CONTENT__: htmls_full['secrets'] ?? '""',
+            __ICON__: JSON.stringify(faviconBase64)
+        }
+    });
 
-    let finalCode;
-    if (devMode) {
-        finalCode = code.outputFiles[0].text;
-    } else {
-        const minifiedCode = await jsMinify(code.outputFiles[0].text, {
-            module: true,
-            output: {
-                comments: false
-            }
-        });
-    
-        console.log('✅ Worker minified successfuly!');
-    
-        const obfuscationResult = obfs.obfuscate(minifiedCode.code, {
-            stringArrayThreshold: 1,
-            stringArrayEncoding: [
-                "rc4"
-            ],
-            numbersToExpressions: true,
-            transformObjectKeys: true,
-            renameGlobals: true,
-            deadCodeInjection: true,
-            deadCodeInjectionThreshold: 0.2,
-            target: "browser"
-        });
-    
-        console.log('✅ Worker obfuscated successfuly!');
-        finalCode = obfuscationResult.getObfuscatedCode();
-    }
+    console.log('✅ built successfuly!');
 
-    const worker = `// @ts-nocheck\n${finalCode}`;
+    const minifiedCode = await jsMinify(code.outputFiles[0].text, {
+        module: true,
+        output: {
+            comments: false
+        }
+    });
+
+    const FullCode = code_full.outputFiles[0].text;
+
+    console.log('✅ Minified successfuly!');
+
+    /*const obfuscationResult = obfs.obfuscate(minifiedCode.code, {
+        stringArrayThreshold: 1,
+        stringArrayEncoding: [
+            "rc4"
+        ],
+        numbersToExpressions: true,
+        transformObjectKeys: true,
+        renameGlobals: true,
+        deadCodeInjection: true,
+        deadCodeInjectionThreshold: 0.2,
+        simplify: true,
+        compact: true,
+        target: "node"
+    });*/
+
+
+    const worker = `// @ts-nocheck\n${minifiedCode.code}`; //obfuscationResult.getObfuscatedCode();
+
+    const worker_full = `// @ts-nocheck\n${FullCode}`;
+
+    console.log('✅ Created successfuly!');
+
     mkdirSync(DIST_PATH, { recursive: true });
-    writeFileSync('./dist/worker.js', worker, 'utf8');
-
+    writeFileSync('./dist/worker.minify.js', worker, 'utf8');
+    writeFileSync('./dist/worker.rebuild.js', worker_full, 'utf8');
+/*
     const zip = new JSZip();
     zip.file('_worker.js', worker);
     zip.generateAsync({
         type: 'nodebuffer',
         compression: 'DEFLATE'
     }).then(nodebuffer => writeFileSync('./dist/worker.zip', nodebuffer));
-
+*/
     console.log('✅ Done!');
 }
 
