@@ -11902,10 +11902,7 @@ function isValidHostName(value, isHost) {
     const ipv4Regex = /^(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)(?:\\/(?:\\d|[12]\\d|3[0-2]))?/;
     const domainRegex = /^(?=.{1,253}$)(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)\\.)+[a-zA-Z]{2,63}/;
     const portRegex = /:(?:6553[0-5]|655[0-2]\\d|65[0-4]\\d{2}|6[0-4]\\d{3}|[1-5]?\\d{1,4})$/;
-    const append = isHost ? portRegex.source : '<\/script>
-</body>
-
-</html>;
+    const append = isHost ? portRegex.source : '$';
     const ipv6Reg = new RegExp(ipv6Regex.source + append, 'gm');
     const ipv4Reg = new RegExp(ipv4Regex.source + append, 'gm');
     const domainReg = new RegExp(domainRegex.source + append, 'gm');
