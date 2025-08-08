@@ -28,9 +28,9 @@ async function processHtmlPages() {
 
         const indexHtml = readFileSync(base('index.html'), 'utf8');
         const styleCode = readFileSync(base('style.css'), 'utf8');
-        const scriptCode = readFileSync(base('script.js'), 'utf8');
+        const scriptCode_ = readFileSync(base('script.js'), 'utf8');
         //const scriptCode_debg = scriptCode.replaceAll('\'$\'', `atob("JA==")`);
-
+        const scriptCode = scriptCode_.replaceAll('\'$\'', `"$"`);
         
         const finalScriptCode = await jsMinify(scriptCode);
         const finalHtml = indexHtml
@@ -52,7 +52,7 @@ async function processHtmlPages() {
             .replaceAll('__SCRIPT__', scriptCode)
             .replaceAll('__PANEL_VERSION__', version);
 
-        const encodedHtml_full = Buffer.from(finalHtml_full, 'utf8').toString('base64');
+        const encodedHtml_full = finalHtml_full;//Buffer.from(finalHtml_full, 'utf8').toString('base64');
         result_full[dir] = JSON.stringify(encodedHtml_full);
     }
 
