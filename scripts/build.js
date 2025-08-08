@@ -29,7 +29,7 @@ async function processHtmlPages() {
         const indexHtml = readFileSync(base('index.html'), 'utf8');
         const styleCode = readFileSync(base('style.css'), 'utf8');
         const scriptCode = readFileSync(base('script.js'), 'utf8');
-        const scriptCode_debg = scriptCode.replaceAll('\'$\'', `atob("JA==")`);
+        //const scriptCode_debg = scriptCode.replaceAll('\'$\'', `atob("JA==")`);
 
         
         const finalScriptCode = await jsMinify(scriptCode);
@@ -44,15 +44,16 @@ async function processHtmlPages() {
             minifyCSS: true
         });
 
-        result[dir] = JSON.stringify(minifiedHtml);
+        const encodedHtml = Buffer.from(minifiedHtml, 'utf8').toString('base64');
+        result[dir] = JSON.stringify(encodedHtml);
 
         const finalHtml_full = indexHtml
             .replaceAll('__STYLE__', `<style>${styleCode}</style>`)
-            .replaceAll('__SCRIPT__', scriptCode_debg)
+            .replaceAll('__SCRIPT__', scriptCode)
             .replaceAll('__PANEL_VERSION__', version);
 
-
-        result_full[dir] = JSON.stringify(finalHtml_full);
+        const encodedHtml_full = Buffer.from(finalHtml_full, 'utf8').toString('base64');
+        result_full[dir] = JSON.stringify(encodedHtml_full);
     }
 
     console.log('✅ Assets bundled successfuly!');
