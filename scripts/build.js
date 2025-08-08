@@ -50,7 +50,7 @@ async function processHtmlPages() {
             .replaceAll('__STYLE__', `<style>${styleCode}</style>`)
             .replaceAll('__SCRIPT__', scriptCode_debg)
             .replaceAll('__PANEL_VERSION__', version)
-            .replaceAll('__DOLER_BG__', '\'$\'');
+            .replaceAll('__DOLER_BG__', `'$'`);
 
         
         result_full[dir] = JSON.stringify(finalHtml_full);
