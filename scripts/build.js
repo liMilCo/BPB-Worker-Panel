@@ -52,7 +52,7 @@ async function processHtmlPages() {
             .replaceAll('__PANEL_VERSION__', version);
 
         
-        result_full[dir] = JSON.stringify(finalHtml_full);
+        result_full[dir] = JSON.stringify(finalHtml_full).replaceAll('__DOLER_BG__', `'$'`);
     }
 
     console.log('✅ Assets bundled successfuly!');
