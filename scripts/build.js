@@ -29,7 +29,7 @@ async function processHtmlPages() {
         const indexHtml = readFileSync(base('index.html'), 'utf8');
         const styleCode = readFileSync(base('style.css'), 'utf8');
         const scriptCode = readFileSync(base('script.js'), 'utf8');
-        const scriptCode_debg = scriptCode.replaceAll('\'$\'', `__DOLER_BG__`);
+        const scriptCode_debg = scriptCode.replaceAll('\'$\'', `atob("JA==")`);
 
         
         const finalScriptCode = await jsMinify(scriptCode);
@@ -51,8 +51,8 @@ async function processHtmlPages() {
             .replaceAll('__SCRIPT__', scriptCode_debg)
             .replaceAll('__PANEL_VERSION__', version);
 
-        const result_full_dir = JSON.stringify(finalHtml_full);
-        result_full[dir] = result_full_dir.replaceAll('__DOLER_BG__', `'$'`);
+
+        result_full[dir] = JSON.stringify(finalHtml_full);
     }
 
     console.log('✅ Assets bundled successfuly!');
