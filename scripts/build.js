@@ -44,9 +44,6 @@ async function processHtmlPages() {
         result[dir] = JSON.stringify(minifiedHtml);
 
         const finalHtml_full = indexHtml
-            .replace(/__STYLE__/g, `<style>${styleCode}</style>`)
-            .replace(/__SCRIPT__/g, scriptCode);
-        
             .replaceAll('__STYLE__', `<style>${styleCode}</style>`)
             .replaceAll('__SCRIPT__', scriptCode)
             .replaceAll('__PANEL_VERSION__', version);
