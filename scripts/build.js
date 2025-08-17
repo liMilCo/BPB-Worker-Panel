@@ -5,13 +5,9 @@ import { build } from 'esbuild';
 import { globSync } from 'glob';
 import { minify as jsMinify } from 'terser';
 import { minify as htmlMinify } from 'html-minifier';
-import { execSync } from 'child_process';
 import JSZip from "jszip";
 import obfs from 'javascript-obfuscator';
 import pkg from '../package.json' with { type: 'json' };
-
-const env = process.env.NODE_ENV || 'mangle';
-const mangleMode = env === 'mangle';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = pathDirname(__filename);
@@ -19,18 +15,12 @@ const __dirname = pathDirname(__filename);
 const ASSET_PATH = join(__dirname, '../src/assets');
 const DIST_PATH = join(__dirname, '../dist/');
 
-const green = '\x1b[32m';
-const red = '\x1b[31m';
-const reset = '\x1b[0m';
-
-const success = `${green}✔${reset}`;
-const failure = `${red}✔${reset}`;
-
 const version = pkg.version;
 
 async function processHtmlPages() {
     const indexFiles = globSync('**/index.html', { cwd: ASSET_PATH });
     const result = {};
+    const result_full = {};
 
     for (const relativeIndexPath of indexFiles) {
         const dir = pathDirname(relativeIndexPath);
@@ -38,16 +28,24 @@ async function processHtmlPages() {
 
         const indexHtml = readFileSync(base('index.html'), 'utf8');
         let finalHtml = indexHtml.replaceAll('__VERSION__', version);
+        let finalHtml_full = finalHtml;
 
         if (dir !== 'error') {
             const styleCode = readFileSync(base('style.css'), 'utf8');
-            const scriptCode = readFileSync(base('script.js'), 'utf8');
+            const scriptCode_ = readFileSync(base('script.js'), 'utf8');
+            //const scriptCode = scriptCode_.replaceAll('\'$\'', `atob("JA==")`);
+            const scriptCode = scriptCode_.replaceAll('\'$\'', `"$"`);
+        
             const finalScriptCode = await jsMinify(scriptCode);
             finalHtml = finalHtml
                 .replaceAll('__STYLE__', `<style>${styleCode}</style>`)
                 .replaceAll('__SCRIPT__', finalScriptCode.code);
-        }
 
+            finalHtml_full = finalHtml_full
+                .replaceAll('__STYLE__', `<style>${styleCode}</style>`)
+                .replaceAll('__SCRIPT__', scriptCode);
+            
+        }
         const minifiedHtml = htmlMinify(finalHtml, {
             collapseWhitespace: true,
             removeAttributeQuotes: true,
@@ -56,36 +54,24 @@ async function processHtmlPages() {
 
         const encodedHtml = Buffer.from(minifiedHtml, 'utf8').toString('base64');
         result[dir] = JSON.stringify(encodedHtml);
+
+
+
+        const encodedHtml_full = Buffer.from(finalHtml_full, 'utf8').toString('base64');
+        result_full[dir] = JSON.stringify(encodedHtml_full);
     }
 
-    console.log(`${success} Assets bundled successfuly!`);
-    return result;
-}
-
-function generateJunkCode() {
-    const minVars = 50, maxVars = 500;
-    const minFuncs = 50, maxFuncs = 500;
-
-    const varCount = Math.floor(Math.random() * (maxVars - minVars + 1)) + minVars;
-    const funcCount = Math.floor(Math.random() * (maxFuncs - minFuncs + 1)) + minFuncs;
-
-    const junkVars = Array.from({ length: varCount }, (_, i) => {
-        const varName = `__junk_${Math.random().toString(36).substring(2, 10)}_${i}`;
-        const value = Math.floor(Math.random() * 100000);
-        return `let ${varName} = ${value};`;
-    }).join('\n');
-
-    const junkFuncs = Array.from({ length: funcCount }, (_, i) => {
-        const funcName = `__junkFunc_${Math.random().toString(36).substring(2, 10)}_${i}`;
-        return `function ${funcName}() { return ${Math.floor(Math.random() * 1000)}; }`;
-    }).join('\n');
-
-    return `// Junk code injection\n${junkVars}\n${junkFuncs}\n`;
+    console.log('✅ Assets bundled successfuly!');
+    //return result;
+    return {"full":result_full, "mini":result};
 }
 
 async function buildWorker() {
 
-    const htmls = await processHtmlPages();
+    const htmlss = await processHtmlPages();
+    const htmls_full = htmlss.full;
+    const htmls = htmlss.mini;
+
     const faviconBuffer = readFileSync('./src/assets/favicon.ico');
     const faviconBase64 = faviconBuffer.toString('base64');
 
@@ -106,74 +92,75 @@ async function buildWorker() {
             __VERSION__: JSON.stringify(version)
         }
     });
+ 
+    const code_full = await build({
+        entryPoints: [join(__dirname, '../src/worker.js')],
+        bundle: true,
+        format: 'esm',
+        write: false,
+        external: ['cloudflare:sockets'],
+        platform: 'browser',
+        target: 'es2020',
+        define: {
+            __PANEL_HTML_CONTENT__: htmls_full['panel'] ?? '""',
+            __LOGIN_HTML_CONTENT__: htmls_full['login'] ?? '""',
+            __ERROR_HTML_CONTENT__: htmls_full['error'] ?? '""',
+            __SECRETS_HTML_CONTENT__: htmls_full['secrets'] ?? '""',
+            __ICON__: JSON.stringify(faviconBase64),
+            __VERSION__: JSON.stringify(version)
+        }
+    });
 
-    console.log(`${success} Worker built successfuly!`);
+    console.log('✅ built successfuly!');
 
-    const minifyCode = async (code) => {
-        const minified = await jsMinify(code, {
-            module: true,
-            output: {
-                comments: false
-            },
-            compress: {
-                dead_code: false,
-                unused: false
-            }
-        });
+    const minifiedCode = await jsMinify(code.outputFiles[0].text, {
+        module: true,
+        output: {
+            comments: false
+        }
+    });
 
-        console.log(`${success} Worker minified successfuly!`);
-        return minified;
-    }
+    const FullCode = code_full.outputFiles[0].text;
 
-    let finalCode;
+    console.log('✅ Minified successfuly!');
 
-    if (mangleMode) {
-        const junkCode = generateJunkCode();
-        const minifiedCode = await minifyCode(junkCode + code.outputFiles[0].text);
-        finalCode = minifiedCode.code;
-    } else {
-        const minifiedCode = await minifyCode(code.outputFiles[0].text);
-        const obfuscationResult = obfs.obfuscate(minifiedCode.code, {
-            stringArrayThreshold: 1,
-            stringArrayEncoding: [
-                "rc4"
-            ],
-            numbersToExpressions: true,
-            transformObjectKeys: true,
-            renameGlobals: true,
-            deadCodeInjection: true,
-            deadCodeInjectionThreshold: 0.2,
-            target: "browser"
-        });
+    /*const obfuscationResult = obfs.obfuscate(minifiedCode.code, {
+        stringArrayThreshold: 1,
+        stringArrayEncoding: [
+            "rc4"
+        ],
+        numbersToExpressions: true,
+        transformObjectKeys: true,
+        renameGlobals: true,
+        deadCodeInjection: true,
+        deadCodeInjectionThreshold: 0.2,
+        simplify: true,
+        compact: true,
+        target: "node"
+    });*/
 
-        console.log(`${success} Worker obfuscated successfuly!`);
-        finalCode = obfuscationResult.getObfuscatedCode();
-    }
 
-    const buildTimestamp = new Date().toISOString();
-    let gitHash = '';
-    try {
-        gitHash = execSync('git rev-parse --short HEAD').toString().trim();
-    } catch (e) {
-        gitHash = 'unknown';
-    }
+    const worker = `// @ts-nocheck\n${minifiedCode.code}`; //obfuscationResult.getObfuscatedCode();
 
-    const buildInfo = `// Build: ${buildTimestamp} | Commit: ${gitHash} | Version: ${version}\n`;
-    const worker = `${buildInfo}// @ts-nocheck\n${finalCode}`;
+    const worker_full = `// @ts-nocheck\n${FullCode}`;
+
+    console.log('✅ Created successfuly!');
+
     mkdirSync(DIST_PATH, { recursive: true });
-    writeFileSync('./dist/worker.js', worker, 'utf8');
-
+    writeFileSync('./dist/worker.minify.js', worker, 'utf8');
+    writeFileSync('./dist/worker.rebuild.js', worker_full, 'utf8');
+/*
     const zip = new JSZip();
     zip.file('_worker.js', worker);
     zip.generateAsync({
         type: 'nodebuffer',
         compression: 'DEFLATE'
     }).then(nodebuffer => writeFileSync('./dist/worker.zip', nodebuffer));
-
-    console.log(`${success} Done!`);
+*/
+    console.log('✅ Done!');
 }
 
 buildWorker().catch(err => {
-    console.error(`${failure} Build failed:`, err);
+    console.error('❌ Build failed:', err);
     process.exit(1);
 });
