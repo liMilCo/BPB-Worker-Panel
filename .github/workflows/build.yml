@@ -1,18 +1,13 @@
-name: Build and Release
+name: liMil ReBuild and Release
 
 permissions:
   contents: write
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */1 * * *'
 
 jobs:
   build:
-    if: |
-      github.event_name == 'workflow_dispatch' || 
-      (github.event_name == 'schedule' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
 
     steps:
@@ -34,27 +29,29 @@ jobs:
       - name: Install dependencies
         run: npm install --production
 
-      - name: Build project
-        run: npm run build
-
-      - name: Read release note
-        id: read_release
-        shell: bash
+      - name: ReBuild project
         run: |
-          r=$(cat RELEASE.md)         
-          r="${r//'%'/'%25'}"                               
-          r="${r//$'\n'/'%0A'}"                             
-          r="${r//$'\r'/'%0D'}"                             
-          echo "RELEASE_BODY=$r" >> $GITHUB_OUTPUT          
+            npm run build
+            mkdir -p unobfuscated
+            cp -f dist/worker.minify.js unobfuscated/worker.Minify.${{ env.RELEASE_VERSION }}.js
+            cp -f dist/worker.rebuild.js unobfuscated/worker.ReBuild.${{ env.RELEASE_VERSION }}.js
 
-      - name: Upload Release Assets
-        uses: svenstaro/upload-release-action@v2
+      - name: Commit and push built worker
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f unobfuscated/worker.Minify.${{ env.RELEASE_VERSION }}.js
+          git add -f unobfuscated/worker.ReBuild.${{ env.RELEASE_VERSION }}.js
+          git commit -m "liMil ReBuild: Full & Minify"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Save to Branch
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: dist/*
-          tag: v${{ env.RELEASE_VERSION }}
-          release_name: Release v${{ env.RELEASE_VERSION }}
-          overwrite: true
-          file_glob: true
-          prerelease: ${{ github.ref != 'refs/heads/main' }}
-          body: ${{ steps.read_release.outputs.RELEASE_BODY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./unobfuscated
+          publish_branch: bpb
+          keep_files: true
