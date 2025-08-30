@@ -31,14 +31,15 @@ export async function handleTCPOutBound(
     async function retry() {
         let tcpSocket;
         const mode = globalThis.proxyMode;
+        const parseIPs = value => value ? value.split(',').map(val => val.trim()).filter(Boolean) : null;
+
         if (mode === 'proxyip') {
             log(`direct connection failed, trying to use Proxy IP for ${addressRemote}`);
             try {
+                const { panelIPs, proxyIPs } = globalThis;
+                const finalProxyIPs = panelIPs.length ? panelIPs : parseIPs(proxyIPs);
+                const selectedProxyIP = finalProxyIPs[Math.floor(Math.random() * finalProxyIPs.length)];
                 let proxyIP, proxyIpPort;
-                const encodedPanelProxyIPs = globalThis.pathName.split('/')[2] || '';
-                const decodedProxyIPs = encodedPanelProxyIPs ? atob(encodedPanelProxyIPs) : globalThis.proxyIPs;
-                const proxyIpList = decodedProxyIPs.split(',').map(ip => ip.trim());
-                const selectedProxyIP = proxyIpList[Math.floor(Math.random() * proxyIpList.length)];
 
                 if (selectedProxyIP.includes(']:')) {
                     const match = selectedProxyIP.match(/^(\[.*?\]):(\d+)$/);
@@ -49,7 +50,6 @@ export async function handleTCPOutBound(
                 }
 
                 tcpSocket = await connectAndWrite(proxyIP || addressRemote, +proxyIpPort || portRemote);
-
             } catch (error) {
                 console.error('Proxy IP connection failed:', error);
                 webSocket.close(1011, 'Proxy IP connection failed: ' + error.message);
@@ -58,9 +58,10 @@ export async function handleTCPOutBound(
         } else if (mode === 'nat64') {
             log(`direct connection failed, trying to generate dynamic NAT64 IP for ${addressRemote}`);
             try {
-                const encodedNat64Prefix = globalThis.pathName.split('/')[2] || '';
-                const nat64Prefix = encodedNat64Prefix ? atob(encodedNat64Prefix) : globalThis.nat64;
-                const dynamicProxyIP = await getDynamicProxyIP(addressRemote, nat64Prefix);
+                const { panelIPs, nat64Prefixes } = globalThis;
+                const prefixes = panelIPs.length ? panelIPs : parseIPs(nat64Prefixes);
+                const selectedPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const dynamicProxyIP = await getDynamicProxyIP(addressRemote, selectedPrefix);
                 tcpSocket = await connectAndWrite(dynamicProxyIP, portRemote);
             } catch (error) {
                 console.error('NAT64 connection failed:', error);
